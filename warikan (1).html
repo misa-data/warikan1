@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<title>割り勘アプリ</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:rgba(0,0,0,0)}
+:root{
+  --bg:#F5F0E8;--bg-card:#FDFAF5;--bg-input:#FFFFFF;
+  --border:#C8BFAA;--border-focus:#8C7B5E;
+  --text:#3A3228;--text-sub:#7A6E5E;--text-hint:#AFA498;
+  --accent:#5C4A2A;--danger:#A0392A;--danger-bg:#FBF0EE;
+  --success:#2A6B42;--success-bg:#EEF7F1;
+}
+html,body{height:100%;background:var(--bg)}
+body{font-family:-apple-system,BlinkMacSystemFont,'Hiragino Sans','Hiragino Kaku Gothic ProN','Noto Sans JP',sans-serif;color:var(--text);min-height:100vh}
+.app{max-width:480px;margin:0 auto;padding:0 0 80px}
+.tab-bar{display:flex;padding:14px 14px 0;background:var(--bg);position:sticky;top:0;z-index:100}
+.tb{flex:1;padding:12px 4px;font-size:14px;font-weight:400;border:1px solid var(--border);background:var(--bg-card);color:var(--text-sub);cursor:pointer;touch-action:manipulation;font-family:inherit}
+.tb:first-child{border-radius:8px 0 0 8px}
+.tb:last-child{border-radius:0 8px 8px 0}
+.tb:not(:first-child){border-left:none}
+.tb.on{color:var(--text);font-weight:600;border-color:var(--accent);box-shadow:inset 0 -2px 0 var(--accent)}
+.pane{display:none;padding:14px}.pane.on{display:block}
+.card{background:var(--bg-card);border-radius:12px;border:1px solid var(--border);margin-bottom:12px;overflow:hidden}
+.acc-hd{display:flex;align-items:center;justify-content:space-between;padding:15px 16px;cursor:pointer;touch-action:manipulation}
+.acc-title{font-size:14px;font-weight:500;color:var(--text);pointer-events:none}
+.chev{font-size:12px;color:var(--text-sub);transition:transform .2s;display:inline-block;pointer-events:none}
+.closed .chev{transform:rotate(-90deg)}
+.closed .acc-body{display:none}
+.acc-body{padding:12px 16px 16px;border-top:1px solid var(--border)}
+input,select{display:block;width:100%;padding:12px 13px;border:1.5px solid var(--border);border-radius:8px;font-size:16px;background:var(--bg-input);color:var(--text);-webkit-appearance:none;appearance:none;font-family:inherit;touch-action:manipulation}
+input::placeholder{color:var(--text-hint)}
+input[type=number]{text-align:center}
+input:focus,select:focus{outline:none;border-color:var(--border-focus);box-shadow:0 0 0 3px rgba(92,74,42,.12)}
+select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%237A6E5E' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;padding-right:32px}
+button{cursor:pointer;touch-action:manipulation;font-family:inherit;-webkit-appearance:none}
+.ev-name-wrap{padding:0 0 12px}
+.fam-list{display:flex;flex-direction:column;gap:10px;margin-bottom:12px}
+.frow{display:flex;align-items:center;gap:8px}
+.falpha{font-size:15px;font-weight:700;color:var(--text-sub);width:20px;text-align:center;flex-shrink:0;pointer-events:none}
+.finputs{display:flex;gap:8px;flex:1;min-width:0}
+.fname-wrap{flex:6;min-width:0}
+.fnum-wrap{flex:4;display:flex;align-items:center;gap:6px;min-width:0}
+.fnum-wrap input{flex:1;min-width:0}
+.funit{font-size:14px;color:var(--text-sub);white-space:nowrap;flex-shrink:0;pointer-events:none}
+.frow-del{min-width:44px;height:44px;border:1.5px solid var(--border);border-radius:8px;background:var(--bg-input);color:var(--text-sub);font-size:18px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.frow-del:active{background:var(--danger-bg);color:var(--danger)}
+.add-btn{display:flex;align-items:center;justify-content:center;width:100%;min-height:46px;padding:12px;border:1.5px dashed var(--border);border-radius:8px;background:transparent;color:var(--text-sub);font-size:14px}
+.add-btn:active{background:rgba(92,74,42,.06)}
+.ent-label{padding:14px 16px 6px;font-size:13px;color:var(--text-sub);font-weight:500}
+.ent-hd{display:grid;grid-template-columns:1fr 90px 1fr 36px;gap:5px;padding:0 16px 4px;font-size:10px;color:var(--text-hint);letter-spacing:.03em}
+.erow{display:grid;grid-template-columns:1fr 90px 1fr 36px;gap:5px;padding:0 16px;margin-bottom:8px;align-items:center}
+.erow input,.erow select{font-size:14px;padding:10px 8px}
+.del-btn{width:36px;height:44px;border:none;background:none;color:var(--text-hint);font-size:20px;display:flex;align-items:center;justify-content:center}
+.del-btn:active{color:var(--danger)}
+.add-entry-wrap{padding:4px 16px 8px}
+.btn-row{display:flex;gap:8px;padding:4px 16px 16px}
+.save-btn{flex:2;padding:14px;background:var(--accent);color:#FDF8F0;border:none;border-radius:8px;font-size:15px;font-weight:600;min-height:50px}
+.save-btn:active{opacity:.8}
+.new-btn{flex:1;padding:14px;background:transparent;color:var(--text-sub);border:1.5px solid var(--border);border-radius:8px;font-size:14px;min-height:50px}
+.new-btn:active{background:rgba(92,74,42,.06)}
+.share-banner{background:#EAF3DE;border:1.5px solid #7AB648;border-radius:10px;padding:12px 14px;margin-bottom:14px;display:none;align-items:flex-start;gap:10px}
+.share-banner.show{display:flex}
+.share-banner-close{font-size:20px;color:#5A8030;background:none;border:none;padding:4px 8px;flex-shrink:0;min-width:40px;min-height:40px;display:flex;align-items:center;justify-content:center}
+.share-btn{display:flex;align-items:center;justify-content:center;gap:6px;width:100%;min-height:46px;padding:12px;background:var(--bg-card);color:var(--text-sub);border:1.5px solid var(--border);border-radius:8px;font-size:13px;margin-top:10px}
+.share-btn:active{background:rgba(92,74,42,.06)}
+.rtotal{background:rgba(92,74,42,.08);border-radius:8px;padding:11px 14px;display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;font-size:13px}
+.rtotal .v{font-weight:700;font-size:15px;color:var(--accent)}
+.rlabel{font-size:10px;color:var(--text-hint);font-weight:600;margin-bottom:7px;letter-spacing:.06em}
+.rsec{margin-bottom:14px}
+.fcard{background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:12px 14px;margin-bottom:8px}
+.fcard-name{font-size:14px;font-weight:600;margin-bottom:6px}
+.fr{display:flex;justify-content:space-between;font-size:12px;color:var(--text-sub);padding:3px 0}
+.fr .v{color:var(--text);font-weight:500}
+.fr .pos{color:var(--success);font-weight:600}
+.fr .neg{color:var(--danger);font-weight:600}
+.settle-tag{display:inline-block;font-size:11px;padding:4px 12px;border-radius:20px;background:var(--danger-bg);color:var(--danger);margin-bottom:10px;font-weight:600;border:1px solid rgba(160,57,42,.2)}
+.settle-big{background:var(--bg-card);border:2px solid var(--danger);border-radius:12px;padding:16px;margin-bottom:10px}
+.settle-arrow{font-size:12px;color:var(--text-sub);margin-bottom:6px}
+.settle-amt{font-size:32px;font-weight:700;color:var(--danger);margin-bottom:4px;letter-spacing:-1px}
+.settle-lbl{font-size:13px;color:var(--text-sub)}
+.no-settle{background:var(--success-bg);border:1px solid rgba(42,107,66,.25);border-radius:8px;padding:13px 14px;font-size:13px;color:var(--success);text-align:center;font-weight:500}
+.no-ev{background:var(--bg-card);border:1px solid var(--border);border-radius:12px;padding:40px 20px;text-align:center;color:var(--text-sub);font-size:13px;line-height:1.9}
+.ev-list{margin-bottom:14px;display:flex;flex-direction:column;gap:7px}
+.evchip{display:flex;justify-content:space-between;align-items:center;padding:12px 14px;background:var(--bg-card);border:1.5px solid var(--border);border-radius:8px;cursor:pointer;font-size:13px;min-height:48px;touch-action:manipulation}
+.evchip.on{border-color:var(--accent);background:rgba(92,74,42,.06)}
+.evchip-name{font-weight:500;pointer-events:none}
+.evchip-date{font-size:11px;color:var(--text-hint);pointer-events:none}
+.abt-row{display:flex;gap:7px;margin-top:8px}
+.abt{flex:1;padding:10px;border:1.5px solid var(--border);border-radius:8px;background:transparent;font-size:12px;color:var(--text-sub);min-height:44px}
+.abt:active{background:rgba(92,74,42,.06)}
+.abt.danger{border-color:rgba(160,57,42,.35);color:var(--danger)}
+.abt.primary{background:var(--accent);color:#FDF8F0;border-color:var(--accent)}
+.sk-empty{text-align:center;padding:48px 20px;color:var(--text-hint);font-size:13px;line-height:1.7}
+.sk-top{background:rgba(92,74,42,.08);border-radius:8px;padding:11px 14px;display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;font-size:13px}
+.sk-top .v{font-weight:700;color:var(--accent)}
+.sk-card{background:var(--bg-card);border:1.5px solid var(--border);border-radius:12px;padding:14px 15px;margin-bottom:10px}
+.sk-hd{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px}
+.sk-name{font-size:14px;font-weight:600}
+.sk-date{font-size:11px;color:var(--text-hint)}
+.sk-meta{display:flex;gap:10px;font-size:11px;color:var(--text-sub);margin-bottom:8px;flex-wrap:wrap}
+.sk-fams{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:8px}
+.fbadge{font-size:11px;padding:3px 10px;border-radius:20px;background:rgba(92,74,42,.08);color:var(--text-sub);border:1px solid var(--border)}
+.sk-settle{font-size:11px;color:var(--text-sub);border-top:1px solid var(--border);padding-top:8px;margin-bottom:8px}
+.sl{display:flex;justify-content:space-between;padding:2px 0}
+.sl .sa{color:var(--danger);font-weight:600}
+.sl.zero .sa{color:var(--text-hint)}
+.sk-acts{display:flex;gap:6px;flex-wrap:wrap}
+.sk-acts .abt{font-size:12px;padding:10px 6px;min-height:44px}
+.toast{position:fixed;bottom:30px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--accent);color:#FDF8F0;padding:11px 22px;border-radius:22px;font-size:13px;font-weight:500;opacity:0;transition:all .3s;pointer-events:none;z-index:9999;white-space:nowrap;box-shadow:0 4px 16px rgba(0,0,0,.2)}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="tab-bar">
+    <button class="tb on" id="tab-input">入力</button>
+    <button class="tb" id="tab-result">結果</button>
+    <button class="tb" id="tab-stock">ストック</button>
+  </div>
+  <div id="p-input" class="pane on">
+    <div id="share-banner" class="share-banner">
+      <span style="font-size:18px;flex-shrink:0">📤</span>
+      <div style="flex:1;font-size:12px;color:#2A5010;line-height:1.5;pointer-events:none">
+        <strong style="font-size:13px;display:block;margin-bottom:3px">共有データを読み込みました</strong>
+        「保存する」を押すとストックに追加できます。
+      </div>
+      <button class="share-banner-close" id="banner-close">×</button>
+    </div>
+    <div class="card" id="acc-ev">
+      <div class="acc-hd" id="acc-ev-hd">
+        <span class="acc-title">今回のイベント設定</span>
+        <span class="chev">▾</span>
+      </div>
+      <div class="acc-body">
+        <div class="ev-name-wrap"><input type="text" id="ev-name" placeholder="例：8月3日 家族旅行"/></div>
+        <div class="fam-list" id="frows"></div>
+        <button class="add-btn" id="add-fam-btn">＋ 家庭を追加</button>
+      </div>
+    </div>
+    <div class="card">
+      <div class="ent-label">立替費用の入力</div>
+      <div class="ent-hd"><span>項目</span><span>金額（円）</span><span>支払った家庭</span><span></span></div>
+      <div id="elist"></div>
+      <div class="add-entry-wrap"><button class="add-btn" id="add-ent-btn">＋ 行を追加</button></div>
+      <div class="btn-row">
+        <button class="save-btn" id="save-btn">保存する</button>
+        <button class="new-btn" id="new-btn">新規作成</button>
+      </div>
+    </div>
+  </div>
+  <div id="p-result" class="pane"><div id="r-nav"></div><div id="r-body"></div></div>
+  <div id="p-stock" class="pane"><div id="s-body"></div></div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+const ALPHAS='ABCDEFGHIJ';
+let D={events:[]};
+try{const r=localStorage.getItem('warikan_app');if(r)D=JSON.parse(r);}catch(e){}
+let curId=D.events[0]?.id||null;
+let editingId=null;
+
+function persist(){try{localStorage.setItem('warikan_app',JSON.stringify(D));}catch(e){}}
+
+function showToast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg;t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2400);
+}
+
+function sw(name){
+  const map={input:'p-input',result:'p-result',stock:'p-stock'};
+  const tmap={input:'tab-input',result:'tab-result',stock:'tab-stock'};
+  Object.keys(map).forEach(k=>{
+    document.getElementById(map[k]).classList.toggle('on',k===name);
+    document.getElementById(tmap[k]).classList.toggle('on',k===name);
+  });
+  if(name==='result')renderResult();
+  if(name==='stock')renderStock();
+}
+
+// タブ
+document.getElementById('tab-input').addEventListener('click',()=>sw('input'));
+document.getElementById('tab-result').addEventListener('click',()=>sw('result'));
+document.getElementById('tab-stock').addEventListener('click',()=>sw('stock'));
+
+// アコーディオン
+document.getElementById('acc-ev-hd').addEventListener('click',()=>{
+  document.getElementById('acc-ev').classList.toggle('closed');
+});
+
+// バナー
+document.getElementById('banner-close').addEventListener('click',()=>{
+  document.getElementById('share-banner').classList.remove('show');
+});
+
+// 家庭追加
+document.getElementById('add-fam-btn').addEventListener('click',()=>addFam());
+
+// 費用行追加
+document.getElementById('add-ent-btn').addEventListener('click',()=>addEnt());
+
+// 保存
+document.getElementById('save-btn').addEventListener('click',()=>saveEv());
+
+// 新規作成
+document.getElementById('new-btn').addEventListener('click',()=>{
+  if(!confirm('入力内容をクリアして新規作成しますか？'))return;
+  editingId=null;resetForm();
+});
+
+function famNames(){
+  return [...document.querySelectorAll('#frows .frow')].map(r=>r.querySelector('.fname').value.trim());
+}
+
+function addFam(name='',adults=1){
+  const c=document.getElementById('frows');
+  const defs=[['江渕家',1],['黒田家',2],['松本家',2]];
+  const i=c.children.length;
+  if(!name&&defs[i]){name=defs[i][0];adults=defs[i][1];}
+  const alpha=ALPHAS[i]||String(i+1);
+  const wrap=document.createElement('div');
+  wrap.className='frow';
+  wrap.innerHTML=`<span class="falpha">${alpha}</span>
+    <div class="finputs">
+      <div class="fname-wrap"><input type="text" class="fname" placeholder="家庭名" value="${name}"/></div>
+      <div class="fnum-wrap"><input type="number" class="fnum" min="1" max="20" value="${adults}" inputmode="numeric"/><span class="funit">人</span></div>
+    </div>
+    <button class="frow-del" type="button">×</button>`;
+  wrap.querySelector('.fname').addEventListener('input',refrSel);
+  wrap.querySelector('.frow-del').addEventListener('click',()=>{
+    wrap.remove();
+    document.querySelectorAll('#frows .falpha').forEach((s,i)=>{s.textContent=ALPHAS[i]||String(i+1);});
+    refrSel();
+  });
+  c.appendChild(wrap);
+  refrSel();
+}
+
+function refrSel(){
+  const ns=famNames();
+  document.querySelectorAll('#elist .fsel').forEach(sel=>{
+    const cur=sel.value;
+    sel.innerHTML=ns.map(n=>`<option value="${n}"${n===cur?' selected':''}>${n||'—'}</option>`).join('');
+  });
+}
+
+function addEnt(item='',amt='',payer=''){
+  const l=document.getElementById('elist');
+  const ns=famNames();
+  const row=document.createElement('div');
+  row.className='erow';
+  const opts=ns.map(n=>`<option value="${n}"${n===payer?' selected':''}>${n||'—'}</option>`).join('');
+  row.innerHTML=`<input type="text" placeholder="項目" value="${item}"/>
+    <input type="number" placeholder="0" min="0" value="${amt}" inputmode="numeric"/>
+    <select class="fsel">${opts}</select>
+    <button class="del-btn" type="button">×</button>`;
+  row.querySelector('.del-btn').addEventListener('click',()=>row.remove());
+  l.appendChild(row);
+}
+
+function getFams(){
+  return [...document.querySelectorAll('#frows .frow')].map(r=>({
+    name:r.querySelector('.fname').value.trim(),
+    adults:parseInt(r.querySelector('.fnum').value)||1
+  })).filter(f=>f.name);
+}
+
+function getEnts(){
+  return [...document.querySelectorAll('#elist .erow')].map(r=>{
+    const ins=r.querySelectorAll('input');
+    return{item:ins[0].value,amount:parseInt(ins[1].value)||0,payer:r.querySelector('select').value};
+  }).filter(e=>e.amount>0);
+}
+
+function saveEv(){
+  const name=document.getElementById('ev-name').value.trim()||'イベント';
+  const fams=getFams(),ents=getEnts();
+  if(!fams.length){alert('家庭を追加してください');return;}
+  if(!ents.length){alert('費用を入力してください');return;}
+  const id=editingId||Date.now().toString();
+  const ev={id,name,date:new Date().toLocaleDateString('ja-JP'),families:fams,entries:ents};
+  const idx=D.events.findIndex(e=>e.id===id);
+  if(idx>=0)D.events[idx]=ev;else D.events.unshift(ev);
+  curId=id;editingId=null;
+  persist();resetForm();
+  document.getElementById('share-banner').classList.remove('show');
+  sw('stock');
+  showToast('保存しました！');
+}
+
+function resetForm(){
+  document.getElementById('ev-name').value='';
+  document.getElementById('frows').innerHTML='';
+  document.getElementById('elist').innerHTML='';
+  document.getElementById('acc-ev').classList.remove('closed');
+}
+
+function loadEv(id){
+  const ev=D.events.find(e=>e.id===id);if(!ev)return;
+  editingId=ev.id;
+  document.getElementById('ev-name').value=ev.name;
+  document.getElementById('frows').innerHTML='';
+  ev.families.forEach(f=>addFam(f.name,f.adults));
+  document.getElementById('elist').innerHTML='';
+  ev.entries.forEach(e=>addEnt(e.item,e.amount,e.payer));
+  refrSel();
+  document.getElementById('acc-ev').classList.remove('closed');
+  sw('input');
+}
+
+function genShareUrl(ev){
+  const b64=btoa(unescape(encodeURIComponent(JSON.stringify(ev))));
+  return location.href.split('#')[0]+'#share='+encodeURIComponent(b64);
+}
+
+function shareEv(id){
+  const ev=D.events.find(e=>e.id===id);if(!ev)return;
+  const url=genShareUrl(ev);
+  if(navigator.share){
+    navigator.share({title:ev.name,text:'割り勘の結果を共有します',url}).catch(()=>copyText(url));
+  }else{
+    copyText(url);
+  }
+}
+
+function copyText(text){
+  if(navigator.clipboard){
+    navigator.clipboard.writeText(text).then(()=>showToast('📋 URLをコピーしました！'));
+  }else{
+    const ta=document.createElement('textarea');
+    ta.value=text;ta.style.cssText='position:fixed;opacity:0;top:0;left:0';
+    document.body.appendChild(ta);ta.focus();ta.select();
+    try{document.execCommand('copy');showToast('📋 URLをコピーしました！');}catch(e){}
+    document.body.removeChild(ta);
+  }
+}
+
+function checkShareUrl(){
+  const hash=location.hash;
+  if(!hash.startsWith('#share='))return;
+  try{
+    const b64=decodeURIComponent(hash.slice(7));
+    const ev=JSON.parse(decodeURIComponent(escape(atob(b64))));
+    ev.id=Date.now().toString();editingId=null;
+    document.getElementById('ev-name').value=ev.name;
+    document.getElementById('frows').innerHTML='';
+    ev.families.forEach(f=>addFam(f.name,f.adults));
+    document.getElementById('elist').innerHTML='';
+    ev.entries.forEach(e=>addEnt(e.item,e.amount,e.payer));
+    refrSel();
+    document.getElementById('share-banner').classList.add('show');
+    document.getElementById('acc-ev').classList.remove('closed');
+    history.replaceState(null,'',location.pathname+location.search);
+  }catch(e){console.error(e);}
+}
+
+function calc(ev){
+  const tot=ev.entries.reduce((s,e)=>s+e.amount,0);
+  const tA=ev.families.reduce((s,f)=>s+f.adults,0);
+  if(!tA)return null;
+  const pp=tot/tA;
+  const fm={};
+  ev.families.forEach(f=>{fm[f.name]={...f,paid:0,share:0};});
+  ev.entries.forEach(e=>{if(fm[e.payer])fm[e.payer].paid+=e.amount;});
+  Object.values(fm).forEach(f=>{f.share=Math.floor(pp*f.adults);});
+  const adj=Object.values(fm).reduce((s,f)=>s+f.share,0);
+  const diff=tot-adj;
+  if(diff&&ev.families[0]&&fm[ev.families[0].name])fm[ev.families[0].name].share+=diff;
+  const bals=Object.values(fm).map(f=>({name:f.name,bal:f.paid-f.share}));
+  const pays=bals.filter(b=>b.bal<0).map(b=>({...b}));
+  const recs=bals.filter(b=>b.bal>0).map(b=>({...b}));
+  const settlements=[];
+  let pi=0,ri=0;
+  while(pi<pays.length&&ri<recs.length){
+    const p=pays[pi],r=recs[ri];
+    const a=Math.min(-p.bal,r.bal);
+    if(a>0)settlements.push({from:p.name,to:r.name,amount:Math.round(a)});
+    p.bal+=a;r.bal-=a;
+    if(Math.abs(p.bal)<1)pi++;if(Math.abs(r.bal)<1)ri++;
+  }
+  return{tot,pp,fm,settlements};
+}
+
+function fmt(n){return Math.floor(n).toLocaleString('ja-JP');}
+
+function makeBtn(cls,text,onClick){
+  const b=document.createElement('button');
+  b.className=cls;b.textContent=text;
+  b.addEventListener('click',onClick);
+  return b;
+}
+
+function renderResult(){
+  const nav=document.getElementById('r-nav');
+  const body=document.getElementById('r-body');
+  if(!D.events.length){
+    nav.innerHTML='';
+    body.innerHTML='<div class="no-ev">まだイベントが保存されていません。<br>入力タブから費用を入力して<br>保存してください。</div>';
+    return;
+  }
+  if(!curId||!D.events.find(e=>e.id===curId))curId=D.events[0].id;
+  const evList=document.createElement('div');evList.className='ev-list';
+  D.events.forEach(ev=>{
+    const chip=document.createElement('div');
+    chip.className='evchip'+(ev.id===curId?' on':'');
+    chip.innerHTML=`<span class="evchip-name">${ev.name}</span><span class="evchip-date">${ev.date}</span>`;
+    chip.addEventListener('click',()=>{curId=ev.id;renderResult();});
+    evList.appendChild(chip);
+  });
+  nav.innerHTML='';nav.appendChild(evList);
+  const ev=D.events.find(e=>e.id===curId);
+  if(!ev){body.innerHTML='';return;}
+  const res=calc(ev);if(!res){body.innerHTML='';return;}
+  const{tot,pp,fm,settlements}=res;
+  let sh=settlements.length
+    ?`<div class="settle-tag">要清算</div>`+settlements.map(s=>
+      `<div class="settle-big"><div class="settle-arrow">${s.from} → ${s.to}</div><div class="settle-amt">¥${s.amount.toLocaleString()}</div><div class="settle-lbl">${s.from}が${s.to}に支払う</div></div>`).join('')
+    :`<div class="no-settle">✓ 清算不要です</div>`;
+  body.innerHTML=`
+    <div class="rsec">
+      <div class="rtotal"><span>合計金額</span><span class="v">¥${tot.toLocaleString()}</span></div>
+      <div class="rtotal"><span>1人あたり</span><span class="v">¥${fmt(pp)}</span></div>
+    </div>
+    <div class="rsec">
+      <div class="rlabel">家庭別内訳</div>
+      ${ev.families.map(f=>{const m=fm[f.name];if(!m)return'';const d=m.paid-m.share;
+        return`<div class="fcard"><div class="fcard-name">${f.name}</div>
+          <div class="fr"><span>大人人数</span><span class="v">${f.adults}人</span></div>
+          <div class="fr"><span>立替合計</span><span class="v">¥${m.paid.toLocaleString()}</span></div>
+          <div class="fr"><span>本来の負担額</span><span class="v">¥${m.share.toLocaleString()}</span></div>
+          <div class="fr"><span>差額</span><span class="${d>=0?'pos':'neg'}">${d>=0?'+':''}¥${Math.round(d).toLocaleString()}</span></div>
+        </div>`;}).join('')}
+    </div>
+    <div class="rsec"><div class="rlabel">清算方法</div>${sh}</div>`;
+  const row=document.createElement('div');row.className='abt-row';
+  row.appendChild(makeBtn('abt','編集する',()=>loadEv(ev.id)));
+  row.appendChild(makeBtn('abt danger','削除する',()=>delEv(ev.id)));
+  body.appendChild(row);
+  body.appendChild(makeBtn('share-btn','📤 このイベントを共有する',()=>shareEv(ev.id)));
+}
+
+function renderStock(){
+  const body=document.getElementById('s-body');
+  if(!D.events.length){
+    body.innerHTML='<div class="sk-empty">保存されたイベントはありません。<br>入力タブから費用を入力して<br>保存してください。</div>';
+    return;
+  }
+  body.innerHTML=`<div class="sk-top"><span>保存済みイベント</span><span class="v">${D.events.length}件</span></div>`;
+  D.events.forEach(ev=>{
+    const res=calc(ev);
+    const tot=ev.entries.reduce((s,e)=>s+e.amount,0);
+    const fbs=ev.families.map((f,i)=>`<span class="fbadge">${ALPHAS[i]||i+1}. ${f.name}(${f.adults}人)</span>`).join('');
+    const sls=res&&res.settlements.length
+      ?res.settlements.map(s=>`<div class="sl"><span>${s.from}→${s.to}</span><span class="sa">¥${s.amount.toLocaleString()}</span></div>`).join('')
+      :`<div class="sl zero"><span>清算なし</span><span class="sa">—</span></div>`;
+    const card=document.createElement('div');card.className='sk-card';
+    card.innerHTML=`
+      <div class="sk-hd"><span class="sk-name">${ev.name}</span><span class="sk-date">${ev.date}</span></div>
+      <div class="sk-meta"><span>合計 ¥${tot.toLocaleString()}</span>${res?`<span>1人 ¥${fmt(res.pp)}</span>`:''}<span>${ev.entries.length}項目</span></div>
+      <div class="sk-fams">${fbs}</div>
+      <div class="sk-settle">${sls}</div>`;
+    const acts=document.createElement('div');acts.className='sk-acts';
+    acts.appendChild(makeBtn('abt primary','詳細',()=>{curId=ev.id;sw('result');}));
+    acts.appendChild(makeBtn('abt','編集',()=>loadEv(ev.id)));
+    acts.appendChild(makeBtn('abt','📤 共有',()=>shareEv(ev.id)));
+    acts.appendChild(makeBtn('abt danger','削除',()=>delEvStock(ev.id)));
+    card.appendChild(acts);
+    body.appendChild(card);
+  });
+}
+
+function delEv(id){
+  if(!confirm('このイベントを削除しますか？'))return;
+  D.events=D.events.filter(e=>e.id!==id);
+  if(curId===id)curId=D.events[0]?.id||null;
+  persist();renderResult();
+}
+function delEvStock(id){
+  if(!confirm('このイベントを削除しますか？'))return;
+  D.events=D.events.filter(e=>e.id!==id);
+  if(curId===id)curId=D.events[0]?.id||null;
+  persist();renderStock();
+}
+
+resetForm();
+checkShareUrl();
+</script>
+</body>
+</html>
